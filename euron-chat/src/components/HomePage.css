@@ -1,0 +1,170 @@
+/* ============= PAGE LAYOUT ============= */
+
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #1d4ed8 0%, #020617 55%);
+  padding: 24px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ============= CARD ============= */
+
+.home-card {
+  width: 100%;
+  max-width: 460px;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 36px 32px 32px;
+  border-radius: 16px;
+  text-align: center;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+}
+
+.home-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.home-subtitle {
+  margin: 10px 0 28px;
+  font-size: 15px;
+  color: #93a3b5;
+}
+
+/* ============= BUTTON ROW ============= */
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* ============= BUTTON BASE STYLE ============= */
+
+.btn {
+  position: relative;
+  border: none;
+  cursor: pointer;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  overflow: hidden;
+  outline: none;
+  transition: transform 0.15s ease;
+  min-width: 130px;
+}
+
+/* Button states */
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* ============= PRIMARY BUTTON ============= */
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: white;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+}
+
+/* ============= GHOST BUTTON ============= */
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #e5e7eb;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============= ANIMATION: SLIDE-UP (LOGIN) ============= */
+
+.btn-animated .btn-visible,
+.btn-animated .btn-hidden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.btn-animated .btn-hidden {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  transition: top 0.25s ease, opacity 0.25s ease;
+}
+
+.btn-animated .btn-visible {
+  transition: top 0.25s ease, opacity 0.25s ease;
+}
+
+.btn-animated:hover .btn-visible {
+  opacity: 0;
+  top: -100%;
+}
+
+.btn-animated:hover .btn-hidden {
+  opacity: 1;
+  top: 0;
+}
+
+.arrow-icon {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ============= ANIMATION: FADE (SIGNUP) ============= */
+
+.btn-fade .btn-hidden {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease;
+}
+
+.btn-fade .btn-visible {
+  transition: opacity 0.25s ease;
+}
+
+.btn-fade:hover .btn-visible {
+  opacity: 0;
+}
+
+.btn-fade:hover .btn-hidden {
+  opacity: 1;
+}
+
+/* ============= RESPONSIVE ============= */
+
+@media (max-width: 520px) {
+  .home-card {
+    padding: 28px 20px;
+  }
+
+  .home-title {
+    font-size: 26px;
+  }
+}

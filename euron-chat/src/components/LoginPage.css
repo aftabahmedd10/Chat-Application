@@ -1,0 +1,128 @@
+/* ============= PAGE LAYOUT ============= */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6; /* soft gray */
+  padding: 20px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ============= CARD CONTAINER ============= */
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  padding: 32px 28px;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+/* ============= TITLES ============= */
+
+.login-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.login-subtitle {
+  margin: 6px 0 24px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* ============= FORM ============= */
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.form-field input {
+  padding: 12px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-field input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+/* ============= BUTTON ============= */
+
+.login-btn {
+  margin-top: 6px;
+  padding: 12px;
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.login-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+/* ============= FOOTER LINKS ============= */
+
+.login-footer {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.login-footer a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ============= RESPONSIVE ============= */
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 20px;
+  }
+
+  .login-title {
+    font-size: 22px;
+  }
+}
