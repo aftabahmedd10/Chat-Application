@@ -30,6 +30,7 @@ from schemas import (
     SendMessageIn,
     UserOut,
     Start1to1In,
+    CreateGroupIn
 )
 from utilities import authenticate_user, get_db, add_new_user
 from auth import create_access_token, verify_token
@@ -158,6 +159,7 @@ async def websocket_endpoint(websocket: WebSocket, convo_id: int):
 
 @app.post("/login")
 def login(request: UserLogin, db: Session = Depends(get_db)):
+    print("inside the login handler python")
     user = authenticate_user(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -172,6 +174,7 @@ def login(request: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/signup", response_model=UserOut)
 def signup(request: UserSignup, db: Session = Depends(get_db)):
+    print("inside the signup python")
     return add_new_user(db, request)
 
 
@@ -249,12 +252,26 @@ def get_messages(
     if not membership:
         raise HTTPException(status_code=404)
 
-    return (
-        db.query(models.Message)
-        .filter(models.Message.conversation_id == convo_id)
-        .order_by(models.Message.created_at)
-        .all()
-    )
+    messages = (
+    db.query(models.Message)
+    .filter(models.Message.conversation_id == convo_id)
+    .order_by(models.Message.created_at)
+    .all()
+)
+
+    return [
+        MessageOut(
+            id=m.id,
+            conversation_id=m.conversation_id,
+            sender_id=m.sender_id,
+            sender_name=m.sender.name,   # 👈 ADD THIS
+            content=m.content,
+            created_at=m.created_at,
+            status=m.status,
+        )
+        for m in messages
+    ]
+
 
 
 @app.post(
@@ -298,6 +315,7 @@ async def post_message(
                 "id": msg.id,
                 "conversation_id": msg.conversation_id,
                 "sender_id": msg.sender_id,
+                "sender_name": msg.sender.name,
                 "content": msg.content,
                 "created_at": msg.created_at.isoformat(),
                 "status": msg.status,
@@ -305,7 +323,16 @@ async def post_message(
         },
     )
 
-    return msg
+    return MessageOut(
+    id=msg.id,
+    conversation_id=msg.conversation_id,
+    sender_id=msg.sender_id,
+    sender_name=msg.sender.name,  
+    content=msg.content,
+    created_at=msg.created_at,
+    status=msg.status,
+    )
+
 
 
 # --------------------------------------------------
@@ -376,3 +403,127 @@ def start_conversation(
         last_message=None,
         last_message_at=None,
     )
+
+
+
+
+@app.post("/conversations/group", response_model=ConversationListItem)
+def create_group(
+    payload: CreateGroupIn,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    me = current_user["user_id"]
+
+    if not payload.user_ids:
+        raise HTTPException(status_code=400, detail="Group must have users")
+
+    conv = models.Conversation(
+        is_group=True,
+        title=payload.title,
+        created_by=me,
+    )
+    db.add(conv)
+    db.flush()
+
+    participants = set(payload.user_ids)
+    participants.add(me)
+
+    for uid in participants:
+        db.add(
+            models.ConversationParticipant(
+                conversation_id=conv.id,
+                user_id=uid,
+                role="admin" if uid == me else "member",
+            )
+        )
+
+    db.commit()
+    db.refresh(conv)
+
+    return ConversationListItem(
+        conversation_id=conv.id,
+        is_group=True,
+        title=conv.title,
+        display_name=conv.title,
+        last_message=None,
+        last_message_at=None,
+    )
+
+
+@app.post("/conversations/{convo_id}/add-users")
+def add_users_to_group(
+    convo_id: int,
+    user_ids: List[int] = Body(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    me = current_user["user_id"]
+
+    conv = db.query(models.Conversation).get(convo_id)
+    if not conv or not conv.is_group:
+        raise HTTPException(status_code=404)
+
+    admin = (
+        db.query(models.ConversationParticipant)
+        .filter_by(
+            conversation_id=convo_id,
+            user_id=me,
+            role="admin",
+        )
+        .first()
+    )
+    if not admin:
+        raise HTTPException(status_code=403)
+
+    existing = {
+        cp.user_id for cp in conv.participants
+    }
+
+    for uid in user_ids:
+        if uid not in existing:
+            db.add(
+                models.ConversationParticipant(
+                    conversation_id=convo_id,
+                    user_id=uid,
+                )
+            )
+
+    db.commit()
+    return {"status": "ok"}
+
+
+@app.get("/conversations/{convo_id}/participants")
+def get_conversation_participants(
+    convo_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["user_id"]
+
+    membership = (
+        db.query(models.ConversationParticipant)
+        .filter_by(conversation_id=convo_id, user_id=user_id)
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=404)
+
+    participants = (
+        db.query(models.ConversationParticipant)
+        .join(models.User)
+        .filter(models.ConversationParticipant.conversation_id == convo_id)
+        .all()
+    )
+
+    return [
+        {
+            "id": p.user.id,
+            "name": p.user.name,
+            "email": p.user.email,
+            "role": p.role,
+        }
+        for p in participants
+    ]
+
+

@@ -1,4 +1,3 @@
-// src/pages/ChatPage.js
 import React, {
   useState,
   useRef,
@@ -10,6 +9,10 @@ import "./ChatPage.css";
 import { apiFetch } from "../utils/api";
 
 const DEBOUNCE_MS = 300;
+
+/* ---------------------------------------
+   MAPPERS
+--------------------------------------- */
 
 const mapConversationItem = (ci) => ({
   id: ci.conversation_id,
@@ -24,6 +27,7 @@ const mapConversationItem = (ci) => ({
 const mapMessageOutToUI = (msg, currentUserId) => ({
   id: msg.id,
   fromMe: Number(msg.sender_id) === Number(currentUserId),
+  senderName: msg.sender_name || "",
   text: msg.content,
   time: msg.created_at
     ? new Date(msg.created_at).toLocaleTimeString([], {
@@ -33,6 +37,10 @@ const mapMessageOutToUI = (msg, currentUserId) => ({
     : "",
 });
 
+/* ---------------------------------------
+   COMPONENT
+--------------------------------------- */
+
 export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -40,10 +48,17 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  /* SEARCH + GROUP CREATION */
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  const [groupMode, setGroupMode] = useState(false);
+  const [groupTitle, setGroupTitle] = useState("");
+  const [groupUsers, setGroupUsers] = useState([]);
+
+  const [participants, setParticipants] = useState([]);
 
   const messagesEndRef = useRef(null);
   const searchTimeoutRef = useRef(null);
@@ -52,19 +67,22 @@ export default function ChatPage() {
   const navigate = useNavigate();
   const currentUserId = Number(localStorage.getItem("user_id"));
 
-  // --------------------------------------------------
-  // Scroll to bottom
-  // --------------------------------------------------
+  /* ---------------------------------------
+     SCROLL
+  --------------------------------------- */
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeId, conversations]);
 
-  // --------------------------------------------------
-  // Load messages
-  // --------------------------------------------------
+  /* ---------------------------------------
+     LOAD MESSAGES
+  --------------------------------------- */
+
   const loadMessagesForConversation = useCallback(
     async (conversationId) => {
       if (!conversationId) return;
+
       try {
         const res = await apiFetch(
           `/conversations/${conversationId}/messages`
@@ -79,9 +97,7 @@ export default function ChatPage() {
 
         setConversations((prev) =>
           prev.map((c) =>
-            c.id === conversationId
-              ? { ...c, messages: mapped }
-              : c
+            c.id === conversationId ? { ...c, messages: mapped } : c
           )
         );
       } catch {
@@ -91,9 +107,28 @@ export default function ChatPage() {
     [currentUserId, navigate]
   );
 
-  // --------------------------------------------------
-  // Initial load
-  // --------------------------------------------------
+
+  /*----------------------------------------
+    LIST GROUP PARTICIPANTS
+  ------------------------------------------*/
+
+  const loadParticipants = async (conversationId) => {
+  try {
+    const res = await apiFetch(
+      `/conversations/${conversationId}/participants`
+    );
+    if (!res.ok) throw new Error();
+    setParticipants(await res.json());
+  } catch {
+    setParticipants([]);
+  }
+};
+
+
+  /* ---------------------------------------
+     INITIAL LOAD
+  --------------------------------------- */
+
   useEffect(() => {
     let mounted = true;
 
@@ -112,9 +147,18 @@ export default function ChatPage() {
         setConversations(mapped);
 
         if (mapped.length) {
-          setActiveId(mapped[0].id);
-          loadMessagesForConversation(mapped[0].id);
+          const first = mapped[0];
+
+          setActiveId(first.id);
+          loadMessagesForConversation(first.id);
+
+          if (first.is_group) {
+            loadParticipants(first.id);
+          } else {
+            setParticipants([]);
+          }
         }
+
       } catch {
         setError("Failed to load conversations.");
       } finally {
@@ -126,9 +170,10 @@ export default function ChatPage() {
     return () => (mounted = false);
   }, [navigate, loadMessagesForConversation]);
 
-  // --------------------------------------------------
-  // SEARCH (debounced)
-  // --------------------------------------------------
+  /* ---------------------------------------
+     SEARCH USERS (DEBOUNCED)
+  --------------------------------------- */
+
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -161,19 +206,11 @@ export default function ChatPage() {
     return () => clearTimeout(searchTimeoutRef.current);
   }, [searchQuery]);
 
-  // --------------------------------------------------
-  // Start new conversation
-  // --------------------------------------------------
-  const startConversationWithUser = async (user) => {
-    const existing = conversations.find(
-      (c) => !c.is_group && c.name === (user.name || user.email)
-    );
-    if (existing) {
-      setActiveId(existing.id);
-      loadMessagesForConversation(existing.id);
-      return;
-    }
+  /* ---------------------------------------
+     START 1:1 CONVERSATION
+  --------------------------------------- */
 
+  const startConversationWithUser = async (user) => {
     try {
       const res = await apiFetch("/conversations/start", {
         method: "POST",
@@ -193,16 +230,43 @@ export default function ChatPage() {
     }
   };
 
-  // --------------------------------------------------
-  // WebSocket (FIXED + STABLE)
-  // --------------------------------------------------
+  /* ---------------------------------------
+     CREATE GROUP
+  --------------------------------------- */
+
+  const createGroup = async () => {
+    if (!groupTitle || !groupUsers.length) return;
+
+    try {
+      const res = await apiFetch("/conversations/group", {
+        method: "POST",
+        body: JSON.stringify({
+          title: groupTitle,
+          user_ids: groupUsers.map((u) => u.id),
+        }),
+      });
+      if (!res.ok) throw new Error();
+
+      const conv = mapConversationItem(await res.json());
+      setConversations((prev) => [conv, ...prev]);
+      setActiveId(conv.id);
+    } catch {
+      setError("Could not create group.");
+    } finally {
+      setGroupMode(false);
+      setGroupTitle("");
+      setGroupUsers([]);
+    }
+  };
+
+  /* ---------------------------------------
+     WEBSOCKET
+  --------------------------------------- */
+
   useEffect(() => {
     if (!activeId) return;
 
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    if (wsRef.current) wsRef.current.close();
 
     const token = localStorage.getItem("access_token");
     if (!token) return;
@@ -222,19 +286,9 @@ export default function ChatPage() {
       if (payload.type !== "message_created") return;
 
       const m = payload.message;
-
-      // 🔑 Ignore own message (already optimistic)
       if (Number(m.sender_id) === currentUserId) return;
 
-      const newMsg = {
-        id: m.id,
-        fromMe: false,
-        text: m.content,
-        time: new Date(m.created_at).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
+      const newMsg = mapMessageOutToUI(m, currentUserId);
 
       setConversations((prev) =>
         prev.map((c) =>
@@ -252,16 +306,19 @@ export default function ChatPage() {
     return () => ws.close();
   }, [activeId, currentUserId]);
 
-  // --------------------------------------------------
-  // Send message
-  // --------------------------------------------------
+  /* ---------------------------------------
+     SEND MESSAGE
+  --------------------------------------- */
+
   const handleSend = async () => {
     if (!messageText.trim() || !activeId) return;
 
     const tempId = `tmp-${Date.now()}`;
+
     const optimistic = {
       id: tempId,
       fromMe: true,
+      senderName: "",
       text: messageText.trim(),
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
@@ -313,9 +370,10 @@ export default function ChatPage() {
     }
   };
 
-  // --------------------------------------------------
-  // Render
-  // --------------------------------------------------
+  /* ---------------------------------------
+     RENDER
+  --------------------------------------- */
+
   if (loading) return <div className="loading-block">Loading…</div>;
   if (error) return <div className="loading-block error-block">{error}</div>;
 
@@ -326,23 +384,62 @@ export default function ChatPage() {
   return (
     <div className="chat-page">
       <aside className="chat-sidebar">
-        <div className="sidebar-search">
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search or start new chat"
-          />
-          {searchLoading && <div>Searching…</div>}
-          {showSearchDropdown && (
-            <ul className="search-results">
-              {searchResults.map((u) => (
-                <li key={u.id} onClick={() => startConversationWithUser(u)}>
-                  {u.name || u.email}
-                </li>
-              ))}
-            </ul>
-          )}
+        <button onClick={() => setGroupMode(true)}>+ New Group</button>
+
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search users"
+        />
+
+        {searchLoading && (
+          <div className="search-loading">Searching…</div>
+        )}
+
+        {showSearchDropdown && (
+          <ul className="search-results">
+            {searchResults.map((u) => (
+              <li
+                key={u.id}
+                onClick={() =>
+                  groupMode
+                    ? setGroupUsers((prev) =>prev.find((x) => x.id === u.id) ? prev : [...prev, u])
+                    : startConversationWithUser(u)
+                }
+              >
+                {u.name || u.email}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {groupMode && (
+  <div className="group-create">
+    <input
+      placeholder="Group name"
+      value={groupTitle}
+      onChange={(e) => setGroupTitle(e.target.value)}
+    />
+
+      {groupUsers.length > 0 && (
+        <div className="selected-users">
+          {groupUsers.map((u) => (
+            <span key={u.id} className="selected-user">
+              {u.name || u.email}
+            </span>
+          ))}
         </div>
+      )}
+
+      <button
+        onClick={createGroup}
+        disabled={!groupTitle || !groupUsers.length}
+      >
+        Create
+      </button>
+    </div>
+  )}
+
 
         <ul className="conversation-list">
           {conversations.map((c) => (
@@ -353,6 +450,10 @@ export default function ChatPage() {
                 setActiveId(c.id);
                 if (!c.messages.length)
                   loadMessagesForConversation(c.id);
+                if (c.is_group)
+                  loadParticipants(c.id);
+                else
+                  setParticipants([]); 
               }}
             >
               {c.name}
@@ -365,40 +466,43 @@ export default function ChatPage() {
         {activeConversation ? (
           <>
             <header className="chat-header">
-              <div className="header-avatar">
-                {(activeConversation.name || "U")[0].toUpperCase()}
-              </div>
               <div className="header-info">
-                <div className="header-name">{activeConversation.name}</div>
-                <div className="header-status">online</div>
+                <div className="header-name">
+                  {activeConversation.name}
+                </div>
+
+                {activeConversation.is_group && participants.length > 0 && (
+                  <div className="header-participants">
+                    {participants.map((p) => p.name).join(", ")}
+                  </div>
+                )}
               </div>
             </header>
 
+
             <section className="chat-messages">
-              {activeConversation.messages.length ? (
-                activeConversation.messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`message-row ${m.fromMe ? "from-me" : "from-them"}`}
-                  >
-                    <div className="message-bubble">
-                      <div className="message-text">{m.text}</div>
-                      <div className="message-time">{m.time}</div>
-                    </div>
+              {activeConversation.messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`message-row ${m.fromMe ? "from-me" : "from-them"}`}
+                >
+                  <div className="message-bubble">
+                    {!m.fromMe &&
+                      activeConversation.is_group && (
+                        <div className="message-sender">
+                          {m.senderName}
+                        </div>
+                      )}
+                    <div className="message-text">{m.text}</div>
+                    <div className="message-time">{m.time}</div>
                   </div>
-                ))
-              ) : (
-                <div className="empty-messages">
-                  No messages yet — say hello 👋
                 </div>
-              )}
+              ))}
               <div ref={messagesEndRef} />
             </section>
 
             <footer className="chat-composer">
               <textarea
-                className="composer-input"
-                placeholder="Type a message…"
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={(e) => {
@@ -408,15 +512,12 @@ export default function ChatPage() {
                   }
                 }}
               />
-              <button className="composer-send" onClick={handleSend}>
-                Send
-              </button>
+              <button onClick={handleSend}>Send</button>
             </footer>
-
           </>
         ) : (
           <div className="empty-state">
-            Select a conversation to start chatting
+            Select a conversation
           </div>
         )}
       </main>

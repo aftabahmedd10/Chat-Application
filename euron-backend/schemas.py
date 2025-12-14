@@ -33,6 +33,7 @@ class MessageOut(BaseModel):
     id: int
     conversation_id: int
     sender_id: int
+    sender_name: Optional[str] 
     content: str
     created_at: Optional[datetime]
     status: Optional[str]

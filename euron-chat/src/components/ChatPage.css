@@ -1,86 +1,98 @@
-/* =========================
-   Layout
-   ========================= */
+/* ===============================
+   LAYOUT
+================================ */
 
 .chat-page {
   display: flex;
   height: 100vh;
-  background: #f5f7fb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f5f7fa;
 }
 
+/* ===============================
+   SIDEBAR
+================================ */
+
 .chat-sidebar {
-  width: 320px;
+  width: 280px;
   background: #ffffff;
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
 }
 
-.chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #eef2f7;
+.chat-sidebar button {
+  margin: 12px;
+  padding: 8px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-/* =========================
-   Sidebar
-   ========================= */
-
-.sidebar-search {
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  position: relative;
+.chat-sidebar button:hover {
+  background: #1d4ed8;
 }
 
-.sidebar-search input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
+.chat-sidebar input {
+  margin: 0 12px 8px;
+  padding: 8px;
+  border-radius: 6px;
   border: 1px solid #d1d5db;
-  font-size: 14px;
-  outline: none;
 }
 
-.sidebar-search input:focus {
-  border-color: #6366f1;
-}
+/* ===============================
+   SEARCH RESULTS
+================================ */
 
-/* Search dropdown */
+.search-loading {
+  margin: 0 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
 
 .search-results {
-  position: absolute;
-  top: 56px;
-  left: 12px;
-  right: 12px;
-  background: #ffffff;
+  list-style: none;
+  margin: 0 12px;
+  padding: 0;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  max-height: 260px;
+  border-radius: 6px;
+  max-height: 200px;
   overflow-y: auto;
-  z-index: 10;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  background: #fff;
 }
 
 .search-results li {
-  padding: 10px 12px;
+  padding: 8px;
   cursor: pointer;
-  font-size: 14px;
 }
 
 .search-results li:hover {
   background: #f3f4f6;
 }
 
-/* =========================
-   Conversation list
-   ========================= */
+/* ===============================
+   GROUP CREATE
+================================ */
+
+.group-create {
+  margin: 8px 12px;
+}
+
+.group-create input {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+/* ===============================
+   CONVERSATION LIST
+================================ */
 
 .conversation-list {
   list-style: none;
-  margin: 0;
   padding: 0;
+  margin: 8px 0 0;
   overflow-y: auto;
   flex: 1;
 }
@@ -88,104 +100,55 @@
 .conversation-list li {
   padding: 12px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
   border-bottom: 1px solid #f1f5f9;
-  transition: background 0.15s ease;
 }
 
 .conversation-list li:hover {
-  background: #f9fafb;
+  background: #f8fafc;
 }
 
 .conversation-list li.active {
-  background: #eef2ff;
-}
-
-.conversation-list .avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #6366f1;
-  color: #ffffff;
+  background: #e0e7ff;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
 }
 
-.conversation-text {
+/* ===============================
+   MAIN CHAT AREA
+================================ */
+
+.chat-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
-.conversation-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.conversation-last {
-  font-size: 13px;
-  color: #6b7280;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.conversation-list li.active .conversation-name {
-  color: #4338ca;
-}
-
-
-/* =========================
-   Header
-   ========================= */
+/* ===============================
+   HEADER
+================================ */
 
 .chat-header {
+  height: 60px;
   background: #ffffff;
-  padding: 12px 16px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
-}
-
-.header-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #6366f1;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-right: 12px;
+  padding: 0 16px;
 }
 
 .header-name {
+  font-size: 16px;
   font-weight: 600;
 }
 
-.header-status {
-  font-size: 12px;
-  color: #10b981;
-}
-
-/* =========================
-   Messages
-   ========================= */
+/* ===============================
+   MESSAGES
+================================ */
 
 .chat-messages {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
+  background: #f1f5f9;
 }
 
 .message-row {
@@ -202,100 +165,128 @@
 }
 
 .message-bubble {
-  max-width: 70%;
-  padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.4;
+  max-width: 65%;
   background: #ffffff;
-  color: #111827;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .message-row.from-me .message-bubble {
-  background: #6366f1;
+  background: #2563eb;
   color: #ffffff;
-  border-bottom-right-radius: 4px;
 }
 
-.message-row.from-them .message-bubble {
-  background: #ffffff;
-  border-bottom-left-radius: 4px;
+.message-sender {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #374151;
+}
+
+.message-row.from-me .message-sender {
+  display: none;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .message-time {
   font-size: 11px;
-  margin-top: 4px;
-  opacity: 0.7;
   text-align: right;
+  margin-top: 4px;
+  opacity: 0.6;
 }
 
-/* =========================
-   Composer
-   ========================= */
+/* ===============================
+   COMPOSER
+================================ */
 
 .chat-composer {
   display: flex;
-  padding: 12px;
+  padding: 10px;
   background: #ffffff;
   border-top: 1px solid #e5e7eb;
 }
 
-.composer-input {
+.chat-composer textarea {
   flex: 1;
   resize: none;
-  border-radius: 20px;
+  padding: 8px;
+  border-radius: 6px;
   border: 1px solid #d1d5db;
-  padding: 10px 14px;
-  font-size: 14px;
-  outline: none;
+  font-family: inherit;
+  height: 40px;
 }
 
-.composer-input:focus {
-  border-color: #6366f1;
-}
-
-.composer-send {
-  margin-left: 10px;
-  padding: 0 18px;
-  border-radius: 20px;
-  border: none;
-  background: #6366f1;
+.chat-composer button {
+  margin-left: 8px;
+  padding: 0 16px;
+  background: #2563eb;
   color: #ffffff;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
 }
 
-.composer-send:hover {
-  background: #4f46e5;
+.chat-composer button:hover {
+  background: #1d4ed8;
 }
 
-/* =========================
-   Empty / Loading / Error
-   ========================= */
+/* ===============================
+   EMPTY STATES
+================================ */
 
-.loading-block,
 .empty-state,
 .empty-messages {
-  padding: 24px;
-  text-align: center;
   color: #6b7280;
-  font-size: 14px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* ===============================
+   LOADING / ERROR
+================================ */
+
+.loading-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 16px;
 }
 
 .error-block {
   color: #dc2626;
 }
 
-/* =========================
-   Responsive
-   ========================= */
 
-@media (max-width: 768px) {
-  .chat-sidebar {
-    width: 260px;
-  }
-
-  .message-bubble {
-    max-width: 85%;
-  }
+.selected-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 12px;
 }
+
+.selected-user {
+  background: #e0e7ff;
+  color: #1e3a8a;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-participants {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
